@@ -1,0 +1,3 @@
+SELECT studentId, S.name, D.name
+ FROM Student AS S, Department AS D
+ WHERE S.departmentId = D.departmentId
