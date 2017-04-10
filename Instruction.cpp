@@ -403,9 +403,9 @@ bool parser(char* input,int length,Inst* next)
         next->instruction = "select";
         for(;i < length;)
         {
-            if(input[i] == 'F' && input[i+1] == 'R' && input[i+2] == 'O' && input[i+3] == 'M' && input[i+4] == ' ')
+            if(input[i] == ' ' && input[i+1] == 'F' && input[i+2] == 'R' && input[i+3] == 'O' && input[i+4] == 'M' && input[i+5] == ' ')
             {
-                i += 5;
+                i += 6;
                 break;
             }
             next->body += input[i];
@@ -414,10 +414,15 @@ bool parser(char* input,int length,Inst* next)
 
         for(;i < length;)
         {
-            if(input[i] == 'W' && input[i+1] == 'H' && input[i+2] == 'E' && input[i+3] == 'R' && input[i+4] == 'E' && input[i+5] == ' ')
+            if(input[i] == ' ' && input[i+1] == 'W' && input[i+2] == 'H' && input[i+3] == 'E' && input[i+4] == 'R' && input[i+5] == 'E' && input[i+6] == ' ')
             {
-                i += 6;
+                i += 7;
                 break;
+            }
+            if(input[i] == 'A' && input[i+1] == 'S' && input[i+2] == ' ')
+            {
+                i += 3;
+                continue;
             }
             next->table_name += input[i];
             i++;
@@ -427,6 +432,108 @@ bool parser(char* input,int length,Inst* next)
         {
             next->condition += input[i];
             i++;
+        }
+
+        {
+            bool isalias = false;
+            string tem_alias = "";
+            string tem_alias_name = "";
+            size_t tem_pos = 0;
+            for(int k = 0; k <= (int)next->table_name.size();)
+            {
+                if(k == (int)next->table_name.size())
+                {
+                    isalias = true;
+                }
+                else if(next->table_name.c_str()[k] == ' ')
+                {
+                    k += 1;
+                    isalias = true;
+                    continue;
+                }
+                if(isalias && ( k == (int)next->table_name.size() || next->table_name.c_str()[k] == ',') )
+                {
+                    isalias = false;
+                    for(size_t j = 0;j < string::npos;)
+                    {
+                        if(j)
+                        {
+                            j = next->body.find(tem_alias + ".",j+1);
+                        }
+                        else
+                        {
+                            j = next->body.find(tem_alias + ".");
+                        }
+
+                        if(j == string::npos)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            if(j == 0)
+                            {
+                                next->body.replace(0,tem_alias.size(),tem_alias_name);
+                            }
+                            else
+                            {
+                                if(next->body.c_str()[j-1] == ',')
+                                {
+                                    next->body.replace(j,tem_alias.size(),tem_alias_name);
+                                }
+                            }
+                        }
+                    }
+                    for(size_t j = 0;j < string::npos;)
+                    {
+                        if(j)
+                        {
+                            j = next->condition.find(tem_alias + ".",j+1);
+                        }
+                        else
+                        {
+                            j = next->condition.find(tem_alias + ".");
+                        }
+                        if(j != string::npos)
+                        {
+                            if(j == 0)
+                            {
+                                next->condition.replace(0,tem_alias.size(),tem_alias_name);
+                            }
+                            else
+                            {
+                                if(next->condition.c_str()[j-1] == ',' || next->condition.c_str()[j-1] == ' ')
+                                {
+                                    next->condition.replace(j,tem_alias.size(),tem_alias_name);
+                                }
+                            }
+                        }
+                    }
+                    tem_pos = next->table_name.find(" " + tem_alias);
+                    if(tem_pos != string::npos)
+                    {
+                        next->table_name.replace(tem_pos,tem_alias.size()+1,"");
+                    }
+                    else
+                    {
+                        cout<<"can't find the alias!\n";
+                    }
+
+                    tem_alias = "";
+                    tem_alias_name = "";
+                }
+                else if(isalias)
+                {
+                    tem_alias += next->table_name.c_str()[k];
+
+                }
+                else
+                {
+                    tem_alias_name += next->table_name.c_str()[k];
+                }
+
+                k++;
+            }
         }
 
         return true;
